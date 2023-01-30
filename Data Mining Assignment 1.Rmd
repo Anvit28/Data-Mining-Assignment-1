@@ -1,0 +1,274 @@
+---
+title: "Data Mining Assignment 1"
+author: ""
+date: ""
+output:
+  md_document: default
+  pdf_document: default
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+```{r installing packages, echo=FALSE, message=FALSE, warning=FALSE}
+install.packages("RCurl")
+```
+## ECO 395M: Exercises 1  
+## Group Members - Alina Khindanova, Anvit Sachdev, Shreya Kamble  
+**Problem 1**  
+Dataset: ABIA.csv
+```{r Reading Dataset, echo=FALSE, warning=FALSE}
+library(RCurl)
+x <- getURL("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/ABIA.csv")
+flights_data <- read.csv(text = x)
+```
+```{r importing libraries, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(dplyr)
+```
+```{r, echo=FALSE, warning=FALSE}
+id <- as_data_frame(flights_data)
+```
+```{r time v/s delay part 1.1, echo=FALSE, warning=FALSE}
+gd <- id %>% 
+        group_by(round(ArrTime/100)) %>% na.omit() %>% 
+        summarise(delay=mean(abs(ArrDelay)+abs(DepDelay)))
+```
+  
+The below plot shows the flight delay time (for all the airlines combined) at different hours of the day. The delay time is calculated as the deviation of arrival time and departure time. Mathematically, it is written as:-  
+        Total Flight Delay = |Arrival Delay|+|Departure Delay|  
+where |.| represents the absolute value function.  
+Arrival time for all the flights is rounded off to the hour (hh) of the day. The data is grouped by the hour (hh) of the arrival time, and the respective mean/ average value of the Total Flight Delay is calculated for all the hours of the day.
+```{r time v/s delay part 1.2, echo=FALSE, warning=FALSE}
+ggplot(gd,mapping = aes(x=gd$`round(ArrTime/100)`,y=gd$delay))+geom_line()+labs(title = "Flight Delay at different times of the day",
+         x = "Time of the Day",
+         y = "Total Flight Delay (in minutes)")+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+  
+We can see from the above plot that the total flight delay (for all the airlines combined) is minimum at around **8 a.m** in the morning. This can be considered as the best time of the day to fly.    
+```{r time v/s delay part 2.1, echo=FALSE, warning=FALSE, message=FALSE}
+gd2 <- id %>% 
+        group_by(UniqueCarrier,round(ArrTime/100)) %>% na.omit() %>% 
+        summarise(delay=mean(abs(ArrDelay)+abs(DepDelay)))
+```
+Similarly to the above plot, we now plot the total flight delay (in minutes) v/s time of the day graph for each airline (given by the unique carrier code).  
+```{r time v/s delay part 2.2, echo=FALSE, warning=FALSE}
+ggplot(gd2,mapping = aes(x=gd2$`round(ArrTime/100)`,y=gd2$delay))+geom_line()+facet_wrap(facets = vars(gd2$UniqueCarrier))+labs(title = "Flight Delay for Different Airlnes at different times of the day",
+         x = "Time of the Day",
+         y = "Total Flight Delay (in minutes)")+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+  
+We can see from the above plot that the best time of day to fly to minimize delays is different for different airlines (i.e., unique carrier code). For instance, the best time of day to fly for the flights with unique carrier code 9E is around 8 a.m whereas the best time of day to fly for the flights with unique carrier code B6 is around 11 a.m.  
+```{r month v/s delay part 1.1, echo=FALSE, warning=FALSE}
+gd3 <- id %>% 
+        group_by(Month) %>% na.omit() %>% 
+        summarise(delay=mean(abs(ArrDelay)+abs(DepDelay)))
+```
+  
+The below plot shows the flight delay time (for all the destinations combined) at different times of the year. The delay time is calculated as the deviation of arrival time and departure time. Mathematically, it is written as:-  
+        Total Flight Delay = |Arrival Delay|+|Departure Delay|  
+where |.| represents the absolute value function.    
+The data is grouped by the month of the date the flight departed, and the respective mean/ average value of the Total Flight Delay is calculated for all the months.  
+```{r month v/s delay part 1.2, echo=FALSE, warning=FALSE}
+ggplot(gd3,mapping = aes(x=gd3$Month,y=gd3$delay))+geom_line()+labs(title = "Flight Delay at different months of the year",
+         x = "Month",
+         y = "Total Flight Delay (in minutes)")+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+    
+We can see from the above plot that the average total flight delay (for all the destinations combined) is minimum during **September** or **October** (i.e, the 9th or the 10th month). This can be considered as the best time of the year to fly.  
+```{r month v/s delay part 2.1, echo=FALSE, warning=FALSE, message=FALSE}
+gd4 <- id %>% filter(Dest=='AUS'| Dest=='DAL' | Dest=='DFW'| Dest=='IAH' | Dest=='PHX'| Dest=='DEN' | Dest=='ORD'| Dest=='HOU' | Dest=='ATL'| Dest=='LAX') %>%
+        group_by(Dest,Month) %>% na.omit() %>%
+        summarise(delay=mean(abs(ArrDelay)+abs(DepDelay)))
+```
+  
+Similarly to the above plot, we now plot the total flight delay (in minutes) v/s time of the year graph for the top 10 most popular destinations.  
+```{r month v/s delay part 2.2, echo=FALSE, warning=FALSE}
+ggplot(gd4,mapping = aes(x=gd4$Month,y=gd4$delay))+geom_line()+facet_wrap(facets = vars(gd4$Dest))+labs(title = "Flight Delay for Top 10 most popular destinations at different months",
+         x = "Month",
+         y = "Total Flight Delay (in minutes)")+theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+   
+We can see from the above plot that the best time of year to fly to minimize delays is different for different destinations. For instance, the best time of year to fly for the flights with destination code LAX is January (i.e, the first month) whereas the best time of year to fly for the flights with destination code ATL is September (i.e, the 9th month).  
+
+**Problem 2**  
+Dataset: olympics_top20.csv
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(dplyr)
+```
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+Olympics = read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/olympics_top20.csv")
+
+```
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+id <- as_data_frame(Olympics)
+```
+```{r Part A, echo=FALSE, warning=FALSE, message=FALSE, results='hide'}
+id %>%
+  filter(sex == "F" & sport == "Athletics") %>%
+  summarize(q95 = quantile(height,0.95))
+```
+
+**PART A**- So, here the 95th percentile of heights for female competitors is 183.
+
+
+```{r Part B, echo=FALSE, warning=FALSE, message=FALSE, results='hide'}
+id %>% filter(sex == 'F') %>%
+  group_by(event) %>%
+  summarize(height_sd = sd(height)) %>%
+  arrange(desc(height_sd))
+```
+
+**PART B**- The singles event where we can see the greatest variability is in the event Rowing Women's Coxed fours which has the standard deviation on 10.9.
+
+
+**PART C**
+```{r PART C, echo=FALSE, warning=FALSE, message=FALSE}
+swim_age = id %>%
+  filter(sport == "Swimming") %>%
+  group_by(sex,year) %>%
+  summarize(mean_age= mean(age))
+
+ggplot(swim_age) + 
+geom_line(aes(x=year, y=mean_age, color = sex)) +labs(x = "Year", y= "Average Age", title = "Average age of Swimmers across the Years") +
+  theme(plot.title = element_text(hjust=0.5))
+```
+
+
+**Caption** = We can observe from the above graph that males started playing earlier than females. Average age for swimmers have gone up, average age for males is relatively high as compared to females. One possible reason could be that females were not physically fit at that time or they were involved in the world war like situation OR we don't have enough data on that.
+
+
+**Problem 3**    
+Dataset: sclass.csv  
+We filtered the data to make two separate datasets with  trim levels equal to 350 and 65 AMG. We split each dataset into training and testing sets, where 80% of observations are in training set. We run KNN models for all values of K from 2 to 200, and calculated corresponding RMSE.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+library(tidyverse)
+library(rsample)  
+library(caret)
+library(modelr)
+library(parallel)
+library(foreach)
+
+
+sclass <- read.csv("https://raw.githubusercontent.com/jgscott/ECO395M/master/data/sclass.csv", sep = ",", dec = ".")
+
+# TRIM LEVEL = 350
+
+set.seed(125)
+
+#filtered for trim level = 350
+trim350 <- filter(sclass, trim == "350")
+
+#made a train-test split
+trim350_split = initial_split(trim350, prop = 0.8)
+trim350_train = training(trim350_split)
+trim350_test = testing(trim350_split)
+
+#took following values of K:
+K_values <- c(2:200)
+RMSE <- c()
+
+for (i in K_values){
+  #run KNN models
+  knn = knnreg(price ~ mileage, data=trim350_train, k=i)
+  #made a vector of RMSE values
+  e <- modelr::rmse(knn, trim350_test)
+  RMSE <- c(RMSE,e)
+  #added to the testing set predictions for each value of K 
+  new <- predict(knn, trim350_test)
+  trim350_test[ , ncol(trim350_test) + 1] <- new
+  colnames(trim350_test)[ncol(trim350_test)] <- paste0("price_pred_knn", i)
+}
+
+#made a plot of RMSE versus K
+dataframe <- data.frame(K_values, RMSE) 
+ggplot(dataframe) +
+  geom_line(aes(x=K_values, y=RMSE)) +
+  xlab("Values of K") + ylab("RMSE") + 
+  ggtitle("Plot of RMSE versus K for trim=350")
+
+#found optimal value of K
+minimum <- min(dataframe$RMSE)
+K <- K_values[dataframe$RMSE == minimum]
+```
+
+Figure 1. This plot shows the values of RMSE corresponding to different values of K for the dataset with trim level = 350. The minimum value of RMSE is reached when K is equal to 16.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height = 6}
+knn = knnreg(price ~ mileage, data=trim350_train, k=K)
+trim350 = trim350 %>%
+  mutate(trim_pred = predict(knn, trim350))
+ggplot(trim350) +
+  geom_line(aes(x=mileage, y=trim_pred), color = "red") +
+  geom_point((aes(x=mileage, y=price))) +
+  xlab("mileage") + ylab("Fitted values of price") + 
+  ggtitle("Plot of the fitted model")
+```
+
+Figure 2. Red line shows the fitted values of price corresponding to different values of mileage for the optimal value of K=16 (for the dataset with trim level = 350).
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height = 6}
+set.seed(125)
+
+#filtered for trim level = 65 AMG
+trim65AMG <- filter(sclass, trim == "65 AMG")
+
+#made a train-test split
+trim65AMG_split = initial_split(trim65AMG, prop = 0.8)
+trim65AMG_train = training(trim65AMG_split)
+trim65AMG_test = testing(trim65AMG_split)
+
+#took following values of K:
+K_values <- c(2:200)
+RMSE <- c()
+
+for (i in K_values){
+  #run KNN models
+  knn = knnreg(price ~ mileage, data=trim65AMG_train, k=i)
+  #made a vector of RMSE values
+  e <- modelr::rmse(knn, trim65AMG_test)
+  RMSE <- c(RMSE,e)
+  #added to the testing set predictions for each value of K 
+  new <- predict(knn, trim65AMG_test)
+  trim65AMG_test[ , ncol(trim65AMG_test) + 1] <- new
+  colnames(trim65AMG_test)[ncol(trim65AMG_test)] <- paste0("price_pred_knn", i)
+}
+
+#made a plot of RMSE versus K
+dataframe <- data.frame(K_values, RMSE) 
+ggplot(dataframe) +
+  geom_line(aes(x=K_values, y=RMSE)) +
+  xlab("Values of K") + ylab("RMSE") + 
+  ggtitle("Plot of RMSE versus K for trim=65 AMG")
+
+#found optimal value of K
+minimum <- min(dataframe$RMSE)
+K <- K_values[dataframe$RMSE == minimum]
+```
+
+Figure 3. This plot shows the values of RMSE corresponding to different values of K for the dataset with trim level = 65 AMG. The minimum value of RMSE is reached when K is equal to 12.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, fig.height = 6}
+#made a plot of of the predictions of price versus mileage
+knn = knnreg(price ~ mileage, data=trim65AMG_train, k=K)
+trim65AMG = trim65AMG %>%
+  mutate(trim_pred = predict(knn, trim65AMG))
+ggplot(trim65AMG) +
+  geom_line(aes(x=mileage, y=trim_pred), color = "red") +
+  geom_point((aes(x=mileage, y=price))) +
+  xlab("mileage") + ylab("Fitted values of price") + 
+  ggtitle("Plot of the fitted model")
+```
+
+Figure 4. Red line shows the fitted values of price corresponding to different values of mileage for the optimal value of K=12 (for the dataset with trim level = 65 AMG).
+
+
+Taking different training and testing sets repeatedly from initial datasets, we will get larger optimal values of K from the dataset with trim = 350 more often than from the dataset with trim = 65 AMG.This could happen because the observations in the dataset with trim = 65 AMG are more scattered from each other, so we need smaller value of K to make prediction less biased.
+
